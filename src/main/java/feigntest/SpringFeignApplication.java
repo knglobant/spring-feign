@@ -36,13 +36,6 @@ public class SpringFeignApplication implements CommandLineRunner {
 	    @RequestLine("POST /")
 	    @Headers("Content-Type: application/json")
 	    SimplePojo post(SimplePojo test);
-/*
-	    default SimplePojo patch(SimplePojo simplePojo) {
-			simplePojo.name = simplePojo.name + "Changed";
-			simplePojo.value= simplePojo.value + 5;
-			return simplePojo;
-	    }
-*/
 
 	    static LocalPatch connect() {
     	ApacheHttpClient apacheHttpClient = new ApacheHttpClient();
