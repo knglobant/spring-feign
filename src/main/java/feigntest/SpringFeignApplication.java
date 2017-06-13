@@ -7,10 +7,12 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import feign.Feign;
+import feign.Headers;
 import feign.Logger;
 import feign.RequestLine;
-import feign.codec.Decoder;
 import feign.gson.GsonDecoder;
+import feign.gson.GsonEncoder;
+import feign.httpclient.ApacheHttpClient;
 
 @SpringBootApplication
 public class SpringFeignApplication implements CommandLineRunner {
@@ -20,27 +22,34 @@ public class SpringFeignApplication implements CommandLineRunner {
 		SpringApplication.run(SpringFeignApplication.class, args);
 	}
 
+	static class SimplePojo {
+		String name;
+		int value;
+	}
+	
 	interface LocalPatch {
 
-		public class SimplePojo {
-			String name;
-			int value;
-		}
-
 	    @RequestLine("PATCH /")
-	    /** send and receive simple pojo. */
+	    @Headers("Content-Type: application/json")
+	    SimplePojo patch(SimplePojo test);
 
+	    @RequestLine("POST /")
+	    @Headers("Content-Type: application/json")
+	    SimplePojo post(SimplePojo test);
+/*
 	    default SimplePojo patch(SimplePojo simplePojo) {
 			simplePojo.name = simplePojo.name + "Changed";
 			simplePojo.value= simplePojo.value + 5;
 			return simplePojo;
 	    }
-
+*/
 
 	    static LocalPatch connect() {
-	      Decoder decoder = new GsonDecoder();
-	      return Feign.builder()
-	          .decoder(decoder)
+    	ApacheHttpClient apacheHttpClient = new ApacheHttpClient();
+	      return Feign.builder()    		  
+    		  .client(apacheHttpClient)
+	          .decoder(new GsonDecoder())
+	          .encoder(new GsonEncoder())
 //	          .errorDecoder(new GitHubErrorDecoder(decoder))
 	          .logger(new Logger.ErrorLogger())
 	          .logLevel(Logger.Level.BASIC)
@@ -54,13 +63,19 @@ public class SpringFeignApplication implements CommandLineRunner {
 		logger.info("Application Started !!");
 		LocalPatch localPatch = LocalPatch.connect();
 		logger.info("Application Connected !!");
-		LocalPatch.SimplePojo simplePojo = new LocalPatch.SimplePojo();
-		simplePojo.name = "Karl.";
+		SimplePojo simplePojo = new SimplePojo();
+		simplePojo.name = "my test";
+		simplePojo.value = 5;
+		
+		simplePojo = localPatch.post(simplePojo);
+		logger.info("POST Called !!");
+		System.out.println(simplePojo.name);
+
+		simplePojo.name = "my test";
 		simplePojo.value = 5;
 		simplePojo = localPatch.patch(simplePojo);
-		logger.info("Application Called !!");
+		logger.info("PATCH Called !!");
 		System.out.println(simplePojo.name);
-		System.out.println(simplePojo.value);
 	}
 	
 }
